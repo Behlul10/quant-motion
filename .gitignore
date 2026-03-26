@@ -1,0 +1,20 @@
+# Environments
+.venv/
+venv/
+env/
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.cursor/
+
+# Data and Models (Optional, but recommended unless you want to version them via Git LFS)
+data/
+models/
+
+#text
+cursor_step_by_step_guidance_for_projec.md

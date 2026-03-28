@@ -13,8 +13,13 @@ __pycache__/
 .cursor/
 
 # Data and Models (Optional, but recommended unless you want to version them via Git LFS)
-data/
-models/
+data/raw/*
+!data/raw/.gitkeep
+data/videos/*
+!data/videos/.gitkeep
+models/*
+!models/.gitkeep
+
 
 #text
 cursor_step_by_step_guidance_for_projec.md

@@ -1,11 +1,13 @@
-model_path = "D:/new_quant/models/hand_landmarker.task"
-video_path = "D:/new_quant/data/videos/hand_wave.mp4"
-output_path = "D:/new_quant/data/raw/hand_wave.json"
-
-
+import sys
 import mediapipe as mp
 import cv2
 import json
+from pathlib import Path
+
+
+model_path = f"{Path(__file__).parent.parent}/models/hand_landmarker.task"
+video_path = sys.argv[1]
+output_path = f"{Path(__file__).parent.parent}/data/raw/{Path(video_path).stem}.json"
 
 def extract_hand_landmarks(video_path, model_path, output_path):
     cap = cv2.VideoCapture(video_path)
@@ -26,9 +28,6 @@ def extract_hand_landmarks(video_path, model_path, output_path):
     running_mode=VisionRunningMode.VIDEO)
     with HandLandmarker.create_from_options(options) as landmarker:
         ret, frame = cap.read()
-        # print(f"{ret} frame read")
-        # if ret == True:
-        #     print(f"frame shape: {frame.shape}")
         while ret == True:
             ret, frame = cap.read()
             if ret == False:

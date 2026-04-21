@@ -5,3 +5,10 @@ Quant-motion is a research project that compares classical computing and quantum
 
 ## Requirements
 To see the libraries and dependencies for this project. Check out the [Requirements](requirements.txt).
+
+## Tech Stack
+- MediaPipe
+- OpenCV
+- Pandas
+- matplotlib
+- IBM Qiskit

@@ -13,8 +13,6 @@ __pycache__/
 .cursor/
 
 # Data and Models (Optional, but recommended unless you want to version them via Git LFS)
-data/raw/*
-!data/raw/.gitkeep
 data/videos/*
 !data/videos/.gitkeep
 models/*

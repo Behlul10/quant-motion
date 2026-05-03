@@ -8,7 +8,7 @@ import numpy as np
 
 video_paths = Path(sys.argv[1]).glob("*.mp4") 
 output_path= f"data/{Path(sys.argv[2])}"
-# output_path = f"{Path(__file__).parent.parent}/data/pca/training_pca.json"
+
 
 def extract_pca(video_paths, output_path):
     frame_list = []

@@ -16,6 +16,9 @@ def qiskit_main():
     X_train = [] #PCA Features
     Y_train = [] #Landmakrs
     lm_lookup = {}
+    N_QUIBITS = 10
+    N_LANDMARKS = 63 # 21 joints x 3 coords
+    BATCH_SIZE = 200
 
     #looping through landmarks and getting a dictionary
     for file in lm_files:
@@ -42,31 +45,36 @@ def qiskit_main():
     X_array = np.array(X_train)
     min_val = X_array.min()
     max_val = X_array.max()
-    enc_params = [Parameter(f"enc_{i}") for i in range(10)]   #Encoding Placeholder 
-    var_params = [Parameter(f"theta_{i}") for i in range(10)] #Variational Placeholder
-    qc = QuantumCircuit(10)
+    enc_params = [Parameter(f"enc_{i}") for i in range(N_QUIBITS)]   #Encoding Placeholder 
+    var_params = [Parameter(f"theta_{i}") for i in range(N_QUIBITS)] #Variational Placeholder
+    qc = QuantumCircuit(N_QUIBITS)
 
-    for i in range(10): #encoding PCA data -> rotations
-        # scaled_pca_val = (X_train[0][i] - min_val) / (max_val - min_val) * math.pi
+    for i in range(N_QUIBITS): #encoding PCA data -> rotations
         qc.ry(enc_params[i], i) #qc.ry(angle, quibit)  
         qc.ry(var_params[i], i)
     
-    #starting Values with seed 
-    np.random.seed(42)
-    random_nums = np.random.randn(703)
-    
+    if Path("models/quant/trained_params.json").exists():
+        with open("models/quant/trained_params.json") as f:
+            saved = json.load(f)
+        random_nums = np.array(saved["params"]) #resume from saved
+    else:
+        #starting Values with seed 
+        np.random.seed(42)
+        random_nums = np.random.randn(N_QUIBITS + N_QUIBITS * N_LANDMARKS + N_LANDMARKS)
+        
+
     def compute_loss(all_params):
-        quantum_params = all_params[:10] #first 10
-        weights = all_params[10:640].reshape(10,63) #next 630 -> 10x63 grid
-        bias = all_params[640:]    # last 63 
+        quantum_params = all_params[:N_QUIBITS] #first N Quibits
+        weights = all_params[N_QUIBITS:N_QUIBITS+N_QUIBITS*N_LANDMARKS].reshape(N_QUIBITS,N_LANDMARKS) #next 630 -> N_QuibitsxN_landmarks grid
+        bias = all_params[N_QUIBITS + N_QUIBITS * N_LANDMARKS:] 
         
         #Varitational Layer --------------------------------------------
         # param_values = {var_params[i]: quantum_params[i] for i in range(10)}
         total_loss = 0
         
-        for sample_idx in range(10):
+        for sample_idx in range(BATCH_SIZE):
             param_values = {}
-            for i in range(10):
+            for i in range(N_QUIBITS):
                 param_values[enc_params[i]] = ((X_train[sample_idx][i] - min_val) / (max_val - min_val) * math.pi)
                 param_values[var_params[i]] = quantum_params[i] #same for all samples
             bound_qc = qc.assign_parameters(param_values)
@@ -75,8 +83,8 @@ def qiskit_main():
             #Expectation Vals -----------------------------------------------
             sv = Statevector(bound_qc)
             expectations = []
-            for i in range(10):
-                z_label = ['I'] * 10 #do nothing on all 10x quibits
+            for i in range(N_QUIBITS):
+                z_label = ['I'] * N_QUIBITS #do nothing on all 10x quibits
                 z_label[i] = 'Z' #measure quibit i
                 op = SparsePauliOp(''.join(z_label))
                 exp_val = sv.expectation_value(op).real
@@ -87,9 +95,17 @@ def qiskit_main():
             nums = (predictions - actual ) ** 2
             total_loss += (sum(nums) / len(nums)) #loss is avg
             
-        return total_loss / 10
+        return total_loss / BATCH_SIZE
     result = minimize(compute_loss, random_nums, method='COBYLA', options={'maxiter':200})
-    print("LOSSES: ",result.fun)
+    print("LOSSES: ", result.fun)
+    
+    with open("models/quant/trained_params.json", "w") as f:
+        json.dump({
+            "params": result.x.tolist(),
+             "loss": result.fun,
+             "min_val": float(min_val),
+             "max_val": float(max_val)
+             }, f)
 
 if __name__ == "__main__":
     qiskit_main()
